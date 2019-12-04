@@ -97,7 +97,7 @@ class SimpleMesh {
     this.scene.add(mesh);
   }
 
-  createTarget(position: THREE.Vector3) {
+  createTarget(position: THREE.Vector3): THREE.Object3D {
     const gizmo = new TransformControls(
       this.camera, 
       this.renderer.domElement
