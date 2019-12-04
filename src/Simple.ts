@@ -7,8 +7,6 @@ class Simple {
   private renderer: THREE.WebGLRenderer;
   private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
-  private ik: IK;
-  private pivot: THREE.Object3D;
 
   constructor() {
     this.scene = new THREE.Scene();
@@ -19,25 +17,35 @@ class Simple {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
 
-    this.initIK();
-    this.render();
+    const [ik, pivot] = this.initIK();
+    this.render(ik, pivot);
   }
 
-  initIK() {
-    this.ik = new IK();
-    this.ik.isIK = true;
-    const chain = new IKChain();
-    const bones: THREE.Bone[] = [];
-    const constraints = [new IKBallConstraint(90)];
+  private initIK(): [ IK, THREE.Object3D ] {
     const movingTarget = new THREE.Mesh(
       new THREE.SphereBufferGeometry(0.1),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
     );
     movingTarget.position.z = 2;
-    this.pivot = new THREE.Object3D();
-    this.pivot.add(movingTarget);
-    this.scene.add(this.pivot);
 
+    const pivot = new THREE.Object3D();
+    pivot.add(movingTarget);
+    this.scene.add(pivot);
+
+    const ik = new IK();
+    ik.isIK = true;
+    ik.add(this.createBonesAndChain(movingTarget));
+    this.scene.add(ik.getRootBone());
+    this.createHelper(ik);
+
+    return [ik, pivot];
+  }
+
+  private createBonesAndChain(movingTarget: THREE.Mesh): IKChain {
+    const chain = new IKChain();
+    const constraints = [new IKBallConstraint(90)];
+    const bones: THREE.Bone[] = [];
+    
     for (let i = 0; i < MAX_JOINTS; i++) {
       const bone = new THREE.Bone();
       bone.position.y = i === 0 ? 0 : 0.5;
@@ -49,22 +57,22 @@ class Simple {
       const target = i === MAX_JOINTS - 1 ? movingTarget : null;
       chain.add(new IKJoint(bone, { constraints }), { target });
     }
+    return chain;
+  }
 
-    this.ik.add(chain);
-
-    this.scene.add(this.ik.getRootBone());
-
-    const helper = new IKHelper(this.ik);
+  private createHelper(ik: IK) {
+    const helper = new IKHelper(ik);
     this.scene.add(helper);
   }
 
-  render() {
-    this.pivot.rotation.x += 0.01;
-    this.pivot.rotation.y += 0.01;
-    this.pivot.rotation.z += 0.01;
-    this.ik.solve();
+  private render(ik:IK, pivot: THREE.Object3D) {
+    pivot.rotation.x += 0.01;
+    pivot.rotation.y += 0.01;
+    pivot.rotation.z += 0.01;
+    ik.solve();
+
     this.renderer.render(this.scene, this.camera);
-    requestAnimationFrame(() => this.render());
+    requestAnimationFrame(() => this.render(ik, pivot));
   }
 }
 

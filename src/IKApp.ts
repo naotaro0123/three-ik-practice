@@ -103,7 +103,7 @@ class IKApp {
 
   setupIK() {}
 
-  createTarget(position: THREE.Vector3) {
+  createTarget(position: THREE.Vector3): THREE.Object3D {
     const gizmo = new TransformControls(
       this.camera, 
       this.renderer.domElement
