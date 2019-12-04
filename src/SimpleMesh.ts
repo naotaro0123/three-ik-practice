@@ -4,9 +4,9 @@ const TransformControls = require('three-transform-controls')(THREE);
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
 const MAX_JOINTS = 3;
-const CAMERA_POS_Z = 3;
-const TARGET_POS_Z = 1;
-const TARGET_POS_Y = 0.2;
+const CAMERA_POS_Z = 3.5;
+const TARGET_POS_Z = 0;
+const TARGET_POS_Y = 1.2;
 
 class SimpleMesh {
   private renderer: THREE.WebGLRenderer;
@@ -18,7 +18,7 @@ class SimpleMesh {
   constructor() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xeeeeee);
-    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 100);
+    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 400);
     this.camera.position.z = CAMERA_POS_Z;
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -62,12 +62,12 @@ class SimpleMesh {
 
   private createBonesAndChain(movingTarget: THREE.Object3D): [ IKChain, THREE.Bone[]] {
     const chain = new IKChain();
-    const constraints = [new IKBallConstraint(90)];
+    const constraints = [new IKBallConstraint(180)];
     const bones: THREE.Bone[] = [];
     
     for (let i = 0; i < MAX_JOINTS; i++) {
       const bone = new THREE.Bone();
-      bone.position.y = i === 0 ? 0 : 0.5;
+      bone.position.z = i === 0 ? 0 : 0.5;
       if (bones[i - 1]) {
         bones[i - 1].add(bone);
       }
@@ -97,7 +97,7 @@ class SimpleMesh {
     this.scene.add(mesh);
   }
 
-  createTarget(position: THREE.Vector3) {
+  createTarget(position: THREE.Vector3): THREE.Object3D {
     const gizmo = new TransformControls(
       this.camera, 
       this.renderer.domElement
