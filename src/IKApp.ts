@@ -31,6 +31,10 @@ class IKApp {
   protected constraintAngle: number;
 
   constructor() {
+    this.animate = this.animate.bind(this);
+    this.onChange = this.onChange.bind(this);
+    this.onWindowResize = this.onWindowResize.bind(this);
+
     this.gui = new dat.GUI();
     this.config = {
       showAxes: true,
@@ -85,7 +89,6 @@ class IKApp {
     this.gizmos = [];
     this.iks = [];
     this.helpers = [];
-
     this.setupIK();
 
     for (let ik of this.iks) {
@@ -109,7 +112,6 @@ class IKApp {
     gizmo.attach(target);
     gizmo.target = target;
     target.position.copy(position);
-
     this.scene.add(gizmo);
     this.scene.add(target);
     this.gizmos.push(gizmo);
@@ -122,6 +124,10 @@ class IKApp {
 
     for (let ik of this.iks) {
       ik.solve();
+    }
+
+    for (let gizmo of this.gizmos) {
+      gizmo.update();
     }
 
     this.renderer.render(this.scene, this.camera);
