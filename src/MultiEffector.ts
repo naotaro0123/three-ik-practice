@@ -75,7 +75,6 @@ class MultiEffector extends IKApp {
   }
 
   onChange() {
-    console.log(this.constraintType)
     // Check if constraintType has changed
     if (this.config.constraintType !== this.constraintType) {
       this.constraintType = this.config.constraintType;
