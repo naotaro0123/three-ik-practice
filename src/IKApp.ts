@@ -1,7 +1,6 @@
 import * as dat from 'dat.gui';
 import * as THREE from 'three';
 import { IK, IKHelper } from 'three-ik';
-// import { TransformControls } from 'three-transform-controls';
 const TransformControls = require('three-transform-controls')(THREE);
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
@@ -102,6 +101,8 @@ class IKApp {
     this.animate();
   }
 
+  setupIK() {}
+
   createTarget(position: THREE.Vector3) {
     const gizmo = new TransformControls(
       this.camera, 
@@ -164,8 +165,6 @@ class IKApp {
     .step(1)
     .onChange(this.onChange);
   }
-
-  setupIK() {}
 }
 
 export default IKApp;
