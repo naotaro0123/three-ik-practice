@@ -3,16 +3,16 @@ import { IK, IKChain, IKJoint, IKBallConstraint, IKHelper } from 'three-ik';
 const TransformControls = require('three-transform-controls')(THREE);
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
-const MAX_JOINTS = 4;
-const CAMERA_POS_Z = 4.8;
-const CAMERA_POS_Y = 2.2;
+const MAX_JOINTS = 6;
+const CAMERA_POS_Z = 4.5;
+const CAMERA_POS_Y = 3.2;
 const TARGET_POS_Z = 0.0;
-const TARGET_POS_Y = 1.5;
+const TARGET_POS_Y = 2.0;
 const sizing = {
-  segmentHeight : 0.5,
-  segmentCount : 3,
-  height : 0.5 * 3,
-  halfHeight : 0.5 * 3 * 0.5
+  segmentHeight : 0.4,
+  segmentCount : 5,
+  height : 0.4 * 5,
+  halfHeight : 0.4 * 5 * 0.4
 };
 
 class SimpleMesh {
@@ -75,7 +75,7 @@ class SimpleMesh {
     
     for (let i = 0; i < MAX_JOINTS; i++) {
       const bone = new THREE.Bone();
-      bone.position.z = i === 0 ? 0 : 0.45;
+      bone.position.z = i === 0 ? 0 : 0.4;
       if (bones[i - 1]) {
         bones[i - 1].add(bone);
       }
@@ -91,7 +91,7 @@ class SimpleMesh {
     const geometry = new THREE.CylinderBufferGeometry(
       0.3, 0.3, sizing.height, 10, sizing.segmentCount, true
     );
-    geometry.translate(0, 0.7, 0);
+    geometry.translate(0, 1.0, 0);
     geometry.rotateX(1.5);
     // geometry.vertices.forEach(vertex => {
     //   const y = vertex.y + sizing.halfHeight;
@@ -134,8 +134,8 @@ class SimpleMesh {
     const skelton = new THREE.Skeleton(bones);
     mesh.add(bones[0]);
     mesh.bind(skelton);
-    skelton.bones[1].rotation.x = -0.8;
-    skelton.bones[2].rotation.x = -0.7;
+    // skelton.bones[1].rotation.x = -0.8;
+    // skelton.bones[2].rotation.x = -0.7;
     this.scene.add(mesh);
   }
 
@@ -162,7 +162,7 @@ class SimpleMesh {
   }
 
   private render(ik:IK, pivot: THREE.Object3D) {
-    // ik.solve();
+    ik.solve();
 
     this.controls.update();
 

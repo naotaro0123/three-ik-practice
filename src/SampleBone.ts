@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import * as dat from 'dat.gui';
 import { OrbitControls } from 'three-orbitcontrols-ts';
+import { IK, IKChain, IKJoint, IKBallConstraint, IKHelper } from 'three-ik';
+const TransformControls = require('three-transform-controls')(THREE);
 
 // add sample under page
 // https://github.com/mrdoob/three.js/blob/master/docs/scenes/bones-browser.html
+// https://threejs.org/docs/#api/en/objects/SkinnedMesh
 
-const segmentHeight = 8;
+const segmentHeight = 5;
 const segmentCount = 4;
 const height = segmentHeight * segmentCount;
 const halfHeight = height * 0.5;
@@ -18,6 +21,10 @@ const sizing = {
 const state = {
   animateBones: false
 };
+const TARGET_POS_Z = 0.0;
+const TARGET_POS_Y = 22.5;
+const CAMERA_POS_Z = 40;
+const CAMERA_POS_Y = 20;
 
 class SampleBone {
   private gui: dat.GUI;
@@ -26,12 +33,13 @@ class SampleBone {
   private scene: THREE.Scene;
   private orbit: OrbitControls;
   private mesh: THREE.SkinnedMesh;
+  private gizmos: any[] = [];
 
   constructor() {
     this.initScene();
-    this.initBones();
+    const [ik, pivot] = this.initIK();
     this.setupDatGui();
-    this.render();
+    this.render(ik, pivot);
   }
 
   initScene() {
@@ -39,8 +47,7 @@ class SampleBone {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x444444);
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
-    this.camera.position.z = 30;
-    this.camera.position.y = 30;
+    this.camera.position.set(0, CAMERA_POS_Y, CAMERA_POS_Z);
     this.renderer = new THREE.WebGLRenderer({antialias: true});
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -66,6 +73,75 @@ class SampleBone {
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     }, false);
+  }
+
+  initIK(): [IK, THREE.Object3D] {
+    const movingTarget = this.createTarget(new THREE.Vector3());
+    movingTarget.position.set(0, TARGET_POS_Y, TARGET_POS_Z);
+
+    const pivot = new THREE.Object3D();
+    pivot.add(movingTarget);
+    this.scene.add(pivot);
+
+    const ik = new IK();
+    ik.isIK = true;
+
+    const [chain, bones] = this.createBonesAndChain(movingTarget);
+    const geometry = this.createGeometry(sizing);
+    this.mesh = this.createMesh(geometry, bones);
+    this.mesh.scale.multiplyScalar(1);
+    this.scene.add(this.mesh);
+    
+    ik.add(chain);
+    this.scene.add(ik.getRootBone());
+    this.createHelper(ik);
+
+    return [ik, pivot];
+  }
+
+  createTarget(position: THREE.Vector3): THREE.Object3D {
+    const gizmo = new TransformControls(
+      this.camera, 
+      this.renderer.domElement
+    );
+    const target = new THREE.Object3D();
+    gizmo.setSize(1.0);
+    gizmo.attach(target);
+    gizmo.target = target;
+    target.position.copy(position);
+    this.scene.add(gizmo);
+    this.scene.add(target);
+    this.gizmos.push(gizmo);
+
+    return target;
+  }
+
+  createBonesAndChain(
+    movingTarget: THREE.Object3D
+  ): [IKChain, THREE.Bone[]] {
+    const chain = new IKChain();
+    const constraints = [new IKBallConstraint(180)];
+    const bones: THREE.Bone[] = [];
+    let prevBone = new THREE.Bone();
+    bones.push(prevBone);
+    prevBone.position.y =- sizing.halfHeight;
+    
+    for (let i = 0; i < sizing.segmentCount; i++) {
+      let bone = new THREE.Bone();
+      bone.position.y = sizing.segmentHeight + 1.0;
+      bones.push(bone);
+      prevBone.add(bone);
+      prevBone = bone;
+  
+      const target = i === segmentCount - 1 ? movingTarget : null;
+      chain.add(new IKJoint(bone, {constraints}), {target});
+    }
+    return [chain, bones];
+  }
+
+  createHelper(ik: IK) {
+    const helper = new IKHelper(ik);
+    this.scene.add(helper);
   }
 
   createGeometry(sizing): THREE.CylinderBufferGeometry {
@@ -101,23 +177,6 @@ class SampleBone {
     return geometry;
   }
 
-  createBones(sizing): THREE.Bone[] {
-    const bones: THREE.Bone[] = [];
-    let prevBone = new THREE.Bone();
-    bones.push(prevBone);
-
-    prevBone.position.y =- sizing.halfHeight;
-
-    for (let i = 0; i < sizing.segmentCount; i ++) {
-      let bone = new THREE.Bone();
-      bone.position.y = sizing.segmentHeight;
-      bones.push(bone);
-      prevBone.add(bone);
-      prevBone = bone;
-    }
-    return bones;
-  }
-
   createMesh(
     geometry: THREE.CylinderBufferGeometry, 
     bones: THREE.Bone[]
@@ -127,7 +186,10 @@ class SampleBone {
       color: 0x156289,
       emissive: 0x072534,
       side: THREE.DoubleSide,
-      flatShading: true
+      flatShading: true,
+      transparent: true,
+      opacity: 0.5,
+      // wireframe: true
     });
 
     const skinnedMesh = new THREE.SkinnedMesh(geometry, material);
@@ -173,15 +235,13 @@ class SampleBone {
     }
   }
 
-  initBones() {
-    const geometry = this.createGeometry(sizing);
-    const bones = this.createBones(sizing);
-    this.mesh = this.createMesh(geometry, bones);
-    this.mesh.scale.multiplyScalar(1);
-    this.scene.add(this.mesh);
-  }
+  render(ik:IK, pivot: THREE.Object3D) {
+    ik.solve();
 
-  render() {
+    for (let gizmo of this.gizmos) {
+      gizmo.update();
+    }
+
     const time = Date.now() * 0.001;
     //Wiggle the bones
     if (state.animateBones) {
@@ -192,7 +252,7 @@ class SampleBone {
     }
 
     this.renderer.render(this.scene, this.camera);
-    requestAnimationFrame(() => this.render());
+    requestAnimationFrame(() => this.render(ik, pivot));
   }
 }
 
