@@ -3,10 +3,11 @@ import { IK, IKChain, IKJoint, IKBallConstraint, IKHelper } from 'three-ik';
 const TransformControls = require('three-transform-controls')(THREE);
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
-const MAX_JOINTS = 3;
+const MAX_JOINTS = 4;
 const CAMERA_POS_Z = 3.5;
-const TARGET_POS_Z = 0;
-const TARGET_POS_Y = 1.2;
+const CAMERA_POS_Y = 2.8;
+const TARGET_POS_Z = 0.0;
+const TARGET_POS_Y = 1.5;
 
 class SimpleMesh {
   private renderer: THREE.WebGLRenderer;
@@ -19,7 +20,7 @@ class SimpleMesh {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xeeeeee);
     this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 400);
-    this.camera.position.z = CAMERA_POS_Z;
+    this.camera.position.set(0, CAMERA_POS_Y, CAMERA_POS_Z);
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -40,8 +41,7 @@ class SimpleMesh {
 
   private initIK(): [IK, THREE.Object3D] {
     const movingTarget = this.createTarget(new THREE.Vector3());
-    movingTarget.position.z = TARGET_POS_Z;
-    movingTarget.position.y = TARGET_POS_Y;
+    movingTarget.position.set(0, TARGET_POS_Y, TARGET_POS_Z);
 
     const pivot = new THREE.Object3D();
     pivot.add(movingTarget);
@@ -67,7 +67,7 @@ class SimpleMesh {
     
     for (let i = 0; i < MAX_JOINTS; i++) {
       const bone = new THREE.Bone();
-      bone.position.z = i === 0 ? 0 : 0.5;
+      bone.position.z = i === 0 ? 0 : 0.45;
       if (bones[i - 1]) {
         bones[i - 1].add(bone);
       }
@@ -80,16 +80,20 @@ class SimpleMesh {
   }
 
   private createMeshs(bones: THREE.Bone[]) {
-    console.log(bones)
-    const geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.5, 10);
+    const geometry = new THREE.CylinderGeometry(0.2, 0.2, 1.4, 10, 3);
+    geometry.translate(0, 0.7, 0);
+    geometry.rotateX(1.5);
+
     const material = new THREE.MeshPhongMaterial({
       skinning: true,
       color: 0x156289,
       emissive: 0x072534,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.5,
+      wireframe: true
     });
+
     const mesh = new THREE.SkinnedMesh(geometry, material);
     const skelton = new THREE.Skeleton(bones);
     mesh.add(bones[0]);
