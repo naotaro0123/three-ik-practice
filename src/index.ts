@@ -4,5 +4,8 @@
 // import MultiEffector from './MultiEffector';
 // new MultiEffector();
 
-import SimpleMesh from './SimpleMesh';
-new SimpleMesh();
+// import SimpleMesh from './SimpleMesh';
+// new SimpleMesh();
+
+import SampleBone from './SampleBone';
+new SampleBone();

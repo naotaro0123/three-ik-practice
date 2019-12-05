@@ -4,10 +4,16 @@ const TransformControls = require('three-transform-controls')(THREE);
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
 const MAX_JOINTS = 4;
-const CAMERA_POS_Z = 3.5;
-const CAMERA_POS_Y = 2.8;
+const CAMERA_POS_Z = 4.8;
+const CAMERA_POS_Y = 2.2;
 const TARGET_POS_Z = 0.0;
 const TARGET_POS_Y = 1.5;
+const sizing = {
+  segmentHeight : 0.5,
+  segmentCount : 3,
+  height : 0.5 * 3,
+  halfHeight : 0.5 * 3 * 0.5
+};
 
 class SimpleMesh {
   private renderer: THREE.WebGLRenderer;
@@ -19,7 +25,9 @@ class SimpleMesh {
   constructor() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xeeeeee);
-    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 400);
+    this.camera = new THREE.PerspectiveCamera(
+      45, window.innerWidth / window.innerHeight, 0.01, 400
+    );
     this.camera.position.set(0, CAMERA_POS_Y, CAMERA_POS_Z);
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -60,7 +68,7 @@ class SimpleMesh {
     return [ik, pivot];
   }
 
-  private createBonesAndChain(movingTarget: THREE.Object3D): [ IKChain, THREE.Bone[]] {
+  private createBonesAndChain(movingTarget: THREE.Object3D): [IKChain, THREE.Bone[]] {
     const chain = new IKChain();
     const constraints = [new IKBallConstraint(180)];
     const bones: THREE.Bone[] = [];
@@ -74,15 +82,43 @@ class SimpleMesh {
       bones.push(bone);
 
       const target = i === MAX_JOINTS - 1 ? movingTarget : null;
-      chain.add(new IKJoint(bone, { constraints }), { target });
+      chain.add(new IKJoint(bone, {constraints}), {target});
     }
     return [chain, bones];
   }
 
   private createMeshs(bones: THREE.Bone[]) {
-    const geometry = new THREE.CylinderGeometry(0.2, 0.2, 1.4, 10, 3);
+    const geometry = new THREE.CylinderBufferGeometry(
+      0.3, 0.3, sizing.height, 10, sizing.segmentCount, true
+    );
     geometry.translate(0, 0.7, 0);
     geometry.rotateX(1.5);
+    // geometry.vertices.forEach(vertex => {
+    //   const y = vertex.y + sizing.halfHeight;
+    //   const skinIndex = Math.floor(y / sizing.segmentHeight);
+    //   const skinWeight = (y % sizing.segmentHeight) / sizing.segmentHeight;
+    //   geometry.skinIndices.push(new THREE.Vector4(skinIndex, skinIndex + 1, 0, 0));
+    //   geometry.skinWeights.push(new THREE.Vector4(1 - skinWeight, skinWeight, 0, 0));
+    // })
+    const position = geometry.attributes.position as THREE.BufferAttribute;
+    let vertex = new THREE.Vector3();
+    const skinIndices = [];
+    const skinWeights = [];
+    for (let i = 0; i < position.count; i++) {
+      vertex.fromBufferAttribute(position, i);
+      const y = vertex.y + sizing.halfHeight;
+      const skinIndex = Math.floor(y / sizing.segmentHeight);
+      const skinWeight = (y % sizing.segmentHeight) / sizing.segmentHeight;
+      skinIndices.push(skinIndex, skinIndex + 1, 0, 0);
+      skinWeights.push(1 - skinWeight, skinWeight, 0, 0);
+    }
+
+    geometry.setAttribute(
+      'skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4)
+    );
+    geometry.setAttribute(
+      'skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4)
+    );
 
     const material = new THREE.MeshPhongMaterial({
       skinning: true,
@@ -98,6 +134,8 @@ class SimpleMesh {
     const skelton = new THREE.Skeleton(bones);
     mesh.add(bones[0]);
     mesh.bind(skelton);
+    skelton.bones[1].rotation.x = -0.8;
+    skelton.bones[2].rotation.x = -0.7;
     this.scene.add(mesh);
   }
 
@@ -124,7 +162,7 @@ class SimpleMesh {
   }
 
   private render(ik:IK, pivot: THREE.Object3D) {
-    ik.solve();
+    // ik.solve();
 
     this.controls.update();
 
