@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-// import { IK, IKChain, IKJoint, IKBallConstraint, IKHelper } from 'three-ik';
-import * as THREEIK from 'three-ik';
+import { IK, IKChain, IKJoint, IKBallConstraint, IKHelper } from 'three-ik';
 
 const MAX_JOINTS = 7;
 
@@ -17,12 +16,11 @@ class Simple {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
-
     const [ik, pivot] = this.initIK();
     this.render(ik, pivot);
   }
 
-  private initIK(): [THREEIK.IK, THREE.Object3D] {
+  private initIK(): [IK, THREE.Object3D] {
     const movingTarget = new THREE.Mesh(
       new THREE.SphereBufferGeometry(0.1),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
@@ -33,7 +31,7 @@ class Simple {
     pivot.add(movingTarget);
     this.scene.add(pivot);
 
-    const ik = new THREEIK.IK();
+    const ik = new IK();
     ik.isIK = true;
     ik.add(this.createBonesAndChain(movingTarget));
     this.scene.add(ik.getRootBone());
@@ -42,11 +40,11 @@ class Simple {
     return [ik, pivot];
   }
 
-  private createBonesAndChain(movingTarget: THREE.Mesh): THREEIK.IKChain {
-    const chain = new THREEIK.IKChain();
-    const constraints = [new THREEIK.IKBallConstraint(90)];
+  private createBonesAndChain(movingTarget: THREE.Mesh): IKChain {
+    const chain = new IKChain();
+    const constraints = [new IKBallConstraint(90)];
     const bones: THREE.Bone[] = [];
-    
+
     for (let i = 0; i < MAX_JOINTS; i++) {
       const bone = new THREE.Bone();
       bone.position.y = i === 0 ? 0 : 0.5;
@@ -56,17 +54,17 @@ class Simple {
       bones.push(bone);
 
       const target = i === MAX_JOINTS - 1 ? movingTarget : null;
-      chain.add(new THREEIK.IKJoint(bone, { constraints }), { target });
+      chain.add(new IKJoint(bone, { constraints }), { target });
     }
     return chain;
   }
 
-  private createHelper(ik: THREEIK.IK) {
-    const helper = new THREEIK.IKHelper(ik);
+  private createHelper(ik: IK) {
+    const helper = new IKHelper(ik);
     this.scene.add(helper);
   }
 
-  private render(ik:THREEIK.IK, pivot: THREE.Object3D) {
+  private render(ik: IK, pivot: THREE.Object3D) {
     pivot.rotation.x += 0.01;
     pivot.rotation.y += 0.01;
     pivot.rotation.z += 0.01;

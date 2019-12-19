@@ -144,7 +144,7 @@ class SampleBone {
     this.scene.add(helper);
   }
 
-  createGeometry(sizing): THREE.CylinderBufferGeometry {
+  createGeometry(sizing: any): THREE.CylinderBufferGeometry {
     let geometry = new THREE.CylinderBufferGeometry(
       5, // radiusTop
       5, // radiusBottom

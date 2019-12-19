@@ -78,7 +78,7 @@ class MultiEffector extends IKApp {
     // Check if constraintType has changed
     if (this.config.constraintType !== this.constraintType) {
       this.constraintType = this.config.constraintType;
-      let constraint;
+      let constraint: null | IKBallConstraint;
 
       switch(this.constraintType) {
         case 'none':
