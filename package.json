@@ -32,7 +32,7 @@
     "dat.gui": "^0.7.6",
     "npm": "^6.14.6",
     "stats.js": "^0.17.0",
-    "three": "^0.111.0",
+    "three": "^0.125.0",
     "three-ik": "^0.1.0",
     "three-orbitcontrols-ts": "^0.1.2",
     "three-transform-controls": "^1.0.4"
